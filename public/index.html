@@ -1,0 +1,182 @@
+<html>
+
+<head>
+  <title>Simple Web Summit Schedule</title>
+  <style>
+  body {
+    font-family: Helvetica Neue, Arial, sans-serif;
+    font-size: 10px;
+    color: #444;
+  }
+  
+  .speaker {
+    font-weight: bold;
+    margin-bottom: 5px;
+  }
+  
+  .title {
+    font-style: italic;
+    margin-bottom: 5px;
+  }
+  
+  table {
+    border: 2px solid #42b983;
+    border-radius: 3px;
+    background-color: #fff;
+  }
+  
+  th {
+    background-color: #42b983;
+    color: rgba(255, 255, 255, 0.66);
+  }
+  
+  td {
+    background-color: #f9f9f9;
+  }
+  
+  th,
+  td {
+    min-width: 120px;
+    padding: 10px 20px;
+    font-size: 12px;
+  }
+  
+  th.active {
+    color: #fff;
+  }
+  
+  th.active .arrow {
+    opacity: 1;
+  }
+  
+  .arrow {
+    display: inline-block;
+    vertical-align: middle;
+    width: 0;
+    height: 0;
+    margin-left: 5px;
+    opacity: 0.66;
+  }
+  
+  .arrow.asc {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-bottom: 4px solid #fff;
+  }
+  
+  .arrow.dsc {
+    border-left: 4px solid transparent;
+    border-right: 4px solid transparent;
+    border-top: 4px solid #fff;
+  }
+  </style>
+</head>
+
+<body>
+  <div id="demo">
+    <table>
+      <thead>
+        <tr>
+          <th>Start Time</th>
+          <th v-repeat="columns">{{$value}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr v-repeat="rows">
+          <td>
+            {{startTime}}
+          </td>
+          <td v-repeat="columns">
+            {{{$value}}}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/vue/0.12.16/vue.min.js"></script>
+  <script type="text/javascript">
+  //https://api.cilabs.net/v1/conferences/ws15/timeslots
+  var columns = [];
+  var rows = [];
+
+  var getRowTemplate = function() {
+    var rowTemplate = {
+      startTime: null,
+      columns: []
+    };
+
+    for (var i = 0; i < columns.length; i++) {
+      rowTemplate.columns.push(null);
+    }
+
+    return rowTemplate;
+  };
+
+  var doesStartTimeExistInRow = function(startTime, rows) {
+    var i, row;
+    for (i = 0; i < rows.length; i++) {
+      row = rows[i];
+      if (row.startTime === startTime)
+        return i;
+    }
+
+    return -1;
+  };
+
+  $.getJSON("data.json", function(json) {
+    console.log(json);
+
+
+    $.each(json, function(index, element) {
+      var name = element.location.name,
+        nameExists = $.inArray(name, columns);
+      if (nameExists === -1)
+        columns.push(name);
+    });
+
+    columns.sort();
+
+    $.each(json, function(index, element) {
+      var startTime = element.start_time,
+        startTimeExists = doesStartTimeExistInRow(startTime, rows),
+        template = getRowTemplate();
+
+      if (startTimeExists === -1) {
+        template.startTime = startTime;
+        rows.push(template);
+      } else {
+        template = rows[startTimeExists];
+      }
+
+      var colIndex = $.inArray(element.location.name, columns);
+      if (colIndex !== -1) {
+        var speakers = [];
+        var speaker = 'Uknown speaker';
+        $.each(element.speakers, function(index, element) {
+          speakers.push(element.name);
+        });
+
+        if (speakers.length > 0) {
+          speaker = speakers.join(', ');
+        }
+
+        template.columns[colIndex] = '<div>' +
+          '<div class="speaker">' + speaker + '</div>' +
+          '<div class="title">' + element.title + '</div>' +
+          '</div>';
+      }
+    });
+
+    var vueMatrix = new Vue({
+      el: '#demo',
+      data: {
+        columns: columns,
+        rows: rows
+      }
+    });
+  });
+  </script>
+</body>
+
+</html>
