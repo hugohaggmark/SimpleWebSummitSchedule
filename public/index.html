@@ -1,12 +1,14 @@
+<!DOCTYPE html>
 <html>
 
 <head>
   <title>Simple Web Summit Schedule</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css">
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap-theme.min.css">
   <style>
   body {
-    font-family: Helvetica Neue, Arial, sans-serif;
-    font-size: 10px;
-    color: #444;
+    font-size: 1em;
   }
   
   .speaker {
@@ -19,82 +21,45 @@
     margin-bottom: 5px;
   }
   
-  table {
-    border: 2px solid #42b983;
-    border-radius: 3px;
-    background-color: #fff;
-  }
-  
-  th {
-    background-color: #42b983;
-    color: rgba(255, 255, 255, 0.66);
-  }
-  
-  td {
-    background-color: #f9f9f9;
-  }
-  
-  th,
-  td {
+  td:first-of-type {
     min-width: 120px;
-    padding: 10px 20px;
-    font-size: 12px;
-  }
-  
-  th.active {
-    color: #fff;
-  }
-  
-  th.active .arrow {
-    opacity: 1;
-  }
-  
-  .arrow {
-    display: inline-block;
-    vertical-align: middle;
-    width: 0;
-    height: 0;
-    margin-left: 5px;
-    opacity: 0.66;
-  }
-  
-  .arrow.asc {
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-bottom: 4px solid #fff;
-  }
-  
-  .arrow.dsc {
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 4px solid #fff;
   }
   </style>
 </head>
 
 <body>
-  <div id="demo">
-    <table>
-      <thead>
-        <tr>
-          <th>Start Time</th>
-          <th v-repeat="columns">{{$value}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr v-repeat="rows">
-          <td>
-            {{startTime}}
-          </td>
-          <td v-repeat="columns">
-            {{{$value}}}
-          </td>
-        </tr>
-      </tbody>
-    </table>
+  <div class="container-fluid">
+    <div class="row">
+      <div id="demo" class="table-responsive">
+        <table class="table table-striped table-bordered table-condensed">
+          <thead>
+            <tr>
+              <th>Start Time</th>
+              <th v-repeat="columns">{{$value}}</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr v-repeat="rows">
+              <td>
+                {{startTime}}
+              </td>
+              <td v-repeat="cells">
+                <div class="speaker">
+                  {{speaker}}
+                </div>
+                <div class="title">
+                  {{title}}
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
   </div>
-  <script type="text/javascript" src="//code.jquery.com/jquery-1.11.3.min.js"></script>
-  <script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/vue/0.12.16/vue.min.js"></script>
+  <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
+  <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
+  <script src="//cdnjs.cloudflare.com/ajax/libs/vue/0.12.16/vue.min.js"></script>
   <script type="text/javascript">
   //https://api.cilabs.net/v1/conferences/ws15/timeslots
   var columns = [];
@@ -103,11 +68,11 @@
   var getRowTemplate = function() {
     var rowTemplate = {
       startTime: null,
-      columns: []
+      cells: []
     };
 
     for (var i = 0; i < columns.length; i++) {
-      rowTemplate.columns.push(null);
+      rowTemplate.cells.push(null);
     }
 
     return rowTemplate;
@@ -124,10 +89,7 @@
     return -1;
   };
 
-  $.getJSON("data.json", function(json) {
-    console.log(json);
-
-
+  var fillColumns = function(json) {
     $.each(json, function(index, element) {
       var name = element.location.name,
         nameExists = $.inArray(name, columns);
@@ -136,7 +98,9 @@
     });
 
     columns.sort();
+  };
 
+  var fillRows = function(json) {
     $.each(json, function(index, element) {
       var startTime = element.start_time,
         startTimeExists = doesStartTimeExistInRow(startTime, rows),
@@ -161,12 +125,17 @@
           speaker = speakers.join(', ');
         }
 
-        template.columns[colIndex] = '<div>' +
-          '<div class="speaker">' + speaker + '</div>' +
-          '<div class="title">' + element.title + '</div>' +
-          '</div>';
+        template.cells[colIndex] = {
+          title: element.title,
+          speaker: speaker
+        };
       }
     });
+  };
+
+  $.getJSON("https://api.cilabs.net/v1/conferences/ws15/timeslots", function(json) {
+    fillColumns(json);
+    fillRows(json);
 
     var vueMatrix = new Vue({
       el: '#demo',
@@ -174,6 +143,19 @@
         columns: columns,
         rows: rows
       }
+    });
+  }).fail(function() {
+    $.getJSON("data.json", function(json) {
+      fillColumns(json);
+      fillRows(json);
+
+      var vueMatrix = new Vue({
+        el: '#demo',
+        data: {
+          columns: columns,
+          rows: rows
+        }
+      });
     });
   });
   </script>
