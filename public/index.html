@@ -21,6 +21,11 @@
     margin-bottom: 5px;
   }
   
+  .description {
+    min-width: 300px;
+    min-height: 300px;
+  }
+  
   td:first-of-type {
     min-width: 120px;
   }
@@ -49,6 +54,18 @@
                 </div>
                 <div class="title">
                   {{title}}
+                </div>
+                <div v-if="showMore">
+                  <a data-toggle="collapse" href="#{{moreId}}" aria-expanded="false" aria-controls="{{moreId}}">
+                    Show more...
+                  </a>
+                  <div class="collapse" id="{{moreId}}">
+                    <div class="description">
+                      <blockquote>
+                        {{description}}
+                      </blockquote>
+                    </div>
+                  </div>
                 </div>
               </td>
             </tr>
@@ -101,6 +118,7 @@
   };
 
   var fillRows = function(json) {
+    var rowIndex = 0;
     $.each(json, function(index, element) {
       var startTime = element.start_time,
         startTimeExists = doesStartTimeExistInRow(startTime, rows),
@@ -127,7 +145,10 @@
 
         template.cells[colIndex] = {
           title: element.title,
-          speaker: speaker
+          speaker: speaker,
+          showMore: true,
+          moreId: 'collapse-' + rowIndex++ + '-' + colIndex,
+          description: element.description || ''
         };
       }
     });
