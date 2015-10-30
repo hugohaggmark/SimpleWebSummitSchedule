@@ -29,6 +29,13 @@
   td:first-of-type {
     min-width: 120px;
   }
+  
+  .floatingHeader {
+    position: fixed;
+    top: 0;
+    visibility: hidden;
+    background-color: #fff;
+  }
   </style>
 </head>
 
@@ -36,9 +43,9 @@
   <div class="container-fluid">
     <div class="row">
       <div id="demo">
-        <table id="theTable" class="table table-striped table-bordered table-condensed">
+        <table id="theTable" class="table table-striped table-bordered table-condensed persist-area">
           <thead>
-            <tr>
+            <tr id="header" class="persist-header">
               <th>Start Time</th>
               <th v-repeat="columns">{{$value}}</th>
             </tr>
@@ -91,7 +98,7 @@
       var scheduleDate = new Date(row.innerText);
       if (scheduleDate >= time) {
         $('html,body').animate({
-          scrollTop: row.offsetTop
+          scrollTop: row.offsetTop - $('.floatingHeader').height()
         }, 1000);
         return;
       }
@@ -181,6 +188,7 @@
         rows: rows
       }
     });
+
     scrollToTime(new Date(Date.now()));
   };
 
@@ -190,6 +198,51 @@
     $.getJSON("data.json", function(json) {
       doStuff(json);
     });
+  });
+
+  function UpdateTableHeaders() {
+    $(".persist-area").each(function() {
+
+      var el = $(this),
+        offset = el.offset(),
+        scrollTop = $(window).scrollTop(),
+        $floatingHeader = $(".floatingHeader", this),
+        $header = $("#header"),
+        i;
+
+      $floatingHeader.find('th').each(function() {
+        var $floating = $(this);
+        var $sticky = $("#header").find("th:contains('" + $floating.text() + "')");
+        $floating.css("width", $sticky.outerWidth(true) + "px");
+      });
+
+      if ((scrollTop > offset.top) && (scrollTop < offset.top + el.height())) {
+        $floatingHeader.css({
+          "visibility": "visible"
+        });
+      } else {
+        $floatingHeader.css({
+          "visibility": "hidden"
+        });
+      }
+    });
+  }
+
+  $(function() {
+
+    var clonedHeaderRow;
+
+    $(".persist-area").each(function() {
+      clonedHeaderRow = $(".persist-header", this);
+      clonedHeaderRow
+        .before(clonedHeaderRow.clone())
+        .css("width", clonedHeaderRow.width())
+        .addClass("floatingHeader");
+    });
+
+    $(window)
+      .scroll(UpdateTableHeaders)
+      .trigger("scroll");
   });
   </script>
 </body>
