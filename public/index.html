@@ -209,7 +209,7 @@
         $floatingHeader = $(".floatingHeader", this),
         $header = $("#header"),
         i;
-
+      $floatingHeader.css("width", $header.outerWidth(true) + "px");
       $floatingHeader.find('th').each(function() {
         var $floating = $(this);
         var $sticky = $("#header").find("th:contains('" + $floating.text() + "')");
@@ -236,7 +236,7 @@
       clonedHeaderRow = $(".persist-header", this);
       clonedHeaderRow
         .before(clonedHeaderRow.clone())
-        .css("width", clonedHeaderRow.width())
+        .css("width", clonedHeaderRow.outerWidth(true))
         .addClass("floatingHeader");
     });
 
